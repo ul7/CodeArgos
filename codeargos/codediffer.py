@@ -33,15 +33,14 @@ class CodeDiffer:
                 lineterm="")
 
             diff_data = '\n'.join(delta)
-            
-            return diff_data
+
         else:
             # Generate an HTML diff file
             differ = difflib.HtmlDiff()
             diff_data = differ.make_file( beautiful_old_code, beautiful_new_code )
-            
+
             if self.console:
                 print( "[CHANGED FILE] {0}".format(url))
                 print(diff_data)
 
-            return diff_data
+        return diff_data

@@ -93,8 +93,7 @@ class DataStore:
         try:
             self.lock.acquire(True)
             self.db.execute("SELECT * FROM pages WHERE url=:u", {'u': url})
-            data = self.db.fetchone()
-            if data:
+            if data := self.db.fetchone():
                 page = ScrapedPage( 
                     data['url'], 
                     data['sig'], 
@@ -108,8 +107,7 @@ class DataStore:
         try:
             self.lock.acquire(True)
             self.db.execute("SELECT * FROM diffs WHERE id=:id", {'id': diff_id})
-            data = self.db.fetchone()
-            if data:
+            if data := self.db.fetchone():
                 diff = Diff(
                     diff_id, 
                     data['url'], 

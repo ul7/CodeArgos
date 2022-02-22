@@ -47,26 +47,22 @@ class CodeArgos:
 
     @classmethod
     def get_print_mode(cls,pmode):
-        if pmode == "none":
-            print_mode = CodeArgosPrintMode.NONE
+        if pmode == "diff":
+            return CodeArgosPrintMode.DIFF
         elif pmode == "id":
-            print_mode = CodeArgosPrintMode.ID
-        elif pmode == "diff":
-            print_mode = CodeArgosPrintMode.DIFF
+            return CodeArgosPrintMode.ID
+        elif pmode == "none":
+            return CodeArgosPrintMode.NONE
         else:
-            print_mode = CodeArgosPrintMode.BOTH
-
-        return print_mode
+            return CodeArgosPrintMode.BOTH
 
     @classmethod
     def get_scoped_targets(cls,file_path):
         scope = []
         try:
-            scope_file = open( file_path, 'r')
-            targets = scope_file.readlines()
-            scope_file.close()
-            for target in targets:
-                scope.append(target.strip())
+            with open( file_path, 'r') as scope_file:
+                targets = scope_file.readlines()
+            scope.extend(target.strip() for target in targets)
         except FileNotFoundError:
             print( "A valid scope target list file not be found.")
         except Exception as e:
@@ -130,28 +126,27 @@ class CodeArgos:
                 print_mode = CodeArgos.get_print_mode(arg.lower())
             elif opt in ("-s", "--scope"):
                 targets = CodeArgos.get_scoped_targets(arg)
-                
+
         CodeArgos.setup_logging(log_level)
 
         if diff_id > 0 and db_file_path:
             diff_viewer = DisplayDiff(db_file_path)
-            diff_viewer.show(diff_id)            
-        else:
-            if seed_url:
-                scan_start = datetime.now(timezone.utc)
-                print( "Attempting to scan {0} across {1} threads...".format(seed_url, threads))
-                print( "Starting scan at {0} UTC".format(scan_start.strftime("%Y-%m-%d %H:%M")) )
-                
-                crawler = WebCrawler(seed_url, threads, show_stats, db_file_path, webhook_type, webhook_url, print_mode)
-                crawler.start(targets)
+            diff_viewer.show(diff_id)
+        elif seed_url:
+            scan_start = datetime.now(timezone.utc)
+            print( "Attempting to scan {0} across {1} threads...".format(seed_url, threads))
+            print( "Starting scan at {0} UTC".format(scan_start.strftime("%Y-%m-%d %H:%M")) )
 
-                scan_end = datetime.now(timezone.utc)
-                elapsed_time = scan_end - scan_start
-                
-                print( "Scan complete: reviewed {0} pages in {1}.".format( crawler.processed, elapsed_time ) )
-            else:
-                print( "Missing target (-u) parameter. Aborting!")
-                CodeArgos.display_usage()
+            crawler = WebCrawler(seed_url, threads, show_stats, db_file_path, webhook_type, webhook_url, print_mode)
+            crawler.start(targets)
+
+            scan_end = datetime.now(timezone.utc)
+            elapsed_time = scan_end - scan_start
+
+            print( "Scan complete: reviewed {0} pages in {1}.".format( crawler.processed, elapsed_time ) )
+        else:
+            print( "Missing target (-u) parameter. Aborting!")
+            CodeArgos.display_usage()
 
 
         

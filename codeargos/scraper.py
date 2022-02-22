@@ -114,14 +114,11 @@ class Scraper:
         return new_content, diff_content
 
     def get_script_blocks(self,html):
-        scripts_blocks = ""
-        for script in html.find_all("script"):
-            if 'src' not in script.attrs:
-                # OK, its a local code block. Add it to what we have so we can hash all the blocks
-                # as one entity.
-                scripts_blocks += script.string
-
-        return scripts_blocks
+        return "".join(
+            script.string
+            for script in html.find_all("script")
+            if 'src' not in script.attrs
+        )
 
     def scrape(self):
         parsed_html = ""
