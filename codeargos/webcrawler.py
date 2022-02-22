@@ -62,7 +62,7 @@ class WebCrawler:
         except Exception as e:
             logging.exception(e)
 
-        return target + ".db" 
+        return f'{target}.db' 
 
     def setup_webhook(self, url, hooktype):
 
@@ -117,7 +117,7 @@ class WebCrawler:
         new_content = future._result[3]
         raw_content = future._result[4]
         diff_content = future._result[5]
-        
+
         # There are occassions when an unknown media type gets through and 
         # can't be properly hashed, which leaves sig empty. Instead of b0rking, 
         # let's just let it go and move on.
@@ -134,9 +134,15 @@ class WebCrawler:
         for link_url in internal_urls:
             # We have to account for not just internal pages, but external scripts foreign to 
             # the target app. ie: jQuery, Angular etc
-            if link_url.startswith(self.seed_url) or link_url.lower().endswith(".js"):
-                if link_url not in self.queued_urls.queue and link_url not in self.processed_urls:
-                    self.queued_urls.put(link_url)
+            if (
+                (
+                    link_url.startswith(self.seed_url)
+                    or link_url.lower().endswith(".js")
+                )
+                and link_url not in self.queued_urls.queue
+                and link_url not in self.processed_urls
+            ):
+                self.queued_urls.put(link_url)
     
     @property
     def processed(self):
@@ -173,11 +179,11 @@ class WebCrawler:
             self.queued_urls.queue.clear()
             self.scoped_scan = True
             self.add_targets(targets)
-        
+
         jobs = []
-        
+
         while True:
-            try:                
+            try:        
                 # get a url from the queue
                 target_url = self.queued_urls.get(timeout=15)
 
@@ -201,10 +207,10 @@ class WebCrawler:
                         self.queued_urls.qsize(),
                         self.pool._work_queue.qsize()))  
 
-                i=i+1
+                i += 1
             except Empty:
                 logging.debug("All queues and jobs complete.")                
-                
+
                 # We need to wait until all child threads/jobs have completed before we can dump
                 # the diffs. If we don't wait, we may miss a few children still being processed and
                 # could cause a runtime exception due to the diff_list size changing.
@@ -218,13 +224,19 @@ class WebCrawler:
     def display_results(self):
         if len(self.diff_list) > 0:
             diff_viewer = DisplayDiff(self.db_name)
-            
+
             try:
-                if self.print_mode == CodeArgosPrintMode.DIFF or self.print_mode == CodeArgosPrintMode.BOTH:
+                if self.print_mode in [
+                    CodeArgosPrintMode.DIFF,
+                    CodeArgosPrintMode.BOTH,
+                ]:
                     for diff_id in self.diff_list.copy():
                         diff_viewer.show(diff_id)
             except Exception as e:
                 logging.exception(e)
             finally:
-                if self.print_mode == CodeArgosPrintMode.ID or self.print_mode == CodeArgosPrintMode.BOTH:
+                if self.print_mode in [
+                    CodeArgosPrintMode.ID,
+                    CodeArgosPrintMode.BOTH,
+                ]:
                     print( "diffs: {0}".format(self.diff_list))                
